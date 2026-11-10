@@ -1,0 +1,2 @@
+# Windows-скрипты: в рабочей копии всегда CRLF (cmd.exe ломается на LF в UTF-8 .bat)
+*.bat text eol=crlf

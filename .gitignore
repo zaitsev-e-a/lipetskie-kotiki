@@ -1,0 +1,15 @@
+# Ключи и локальные настройки
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Временные файлы
+.cache/
+*.log

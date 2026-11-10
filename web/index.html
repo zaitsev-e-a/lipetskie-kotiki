@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Липецкие котики — ИИ, который не обманывает</title>
+  <meta name="description" content="Ответы по документам закупки с проверяемыми цитатами. Кейс ОНСОФТ.">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="app-shell">
+  <header class="site-header">
+    <a class="brand" href="#" data-go="docs" aria-label="Липецкие котики — к выбору документов">
+      <img class="brand-logo" src="/assets/logo.webp" alt="" width="44" height="44">
+      <span class="brand-text">
+        <span class="brand-name">Липецкие котики</span>
+        <span class="brand-sub">ИИ, который не обманывает</span>
+      </span>
+    </a>
+    <div class="header-right">
+      <div class="infra" id="infra" aria-label="Состояние компонентов">
+        <span class="model-chip" id="modelChip" title="Модель OpenRouter — нажмите, чтобы проверить доступ">
+          <span class="dot"></span><span id="modelName">модель…</span>
+        </span>
+        <span class="model-chip small" id="embedChip" title="Модель эмбеддингов"><span class="dot"></span><span id="embedName">эмбеддинги…</span></span>
+        <span class="model-chip small" id="qdrantChip" title="Qdrant: гибридный поиск dense + BM25 + RRF"><span class="dot"></span><span id="qdrantName">Qdrant…</span></span>
+      </div>
+      <button class="btn btn-ghost" id="backToDocs" hidden data-go="docs">← К выбору документов</button>
+    </div>
+  </header>
+
+  <!-- ============================ Страница 1: документы ============================ -->
+  <main id="pageDocs" class="page">
+    <section class="hero" id="docsHero">
+      <div class="hero-copy">
+        <p class="eyebrow">Кейс ОНСОФТ · «ИТ-Хакатона 2026»</p>
+        <h1>Покажите котику документы</h1>
+        <p class="hero-subtitle">Выберите папку: внутри — папки закупок с файлами TXT, PDF или DOCX</p>
+      </div>
+      <div class="mascot-stage">
+        <span class="pixel-spark pixel-spark--one" aria-hidden="true"></span>
+        <span class="pixel-spark pixel-spark--two" aria-hidden="true"></span>
+        <img class="mascot" src="/assets/cat-hero.webp" alt="Рыжий котик в короне держит табличку" width="900" height="900" draggable="false">
+        <label class="plank-button" id="pickFolder" tabindex="0" role="button">
+          <input type="file" id="folderInput" webkitdirectory directory multiple hidden>
+          <span class="plank-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.6l2 2h8.4A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z" fill="#f5b52e" stroke="#8a4a1c" stroke-width="1.4"/></svg>
+          </span>
+          <span class="plank-text">Выбрать папку с закупками</span>
+        </label>
+      </div>
+      <details class="settings" id="settings">
+        <summary>Режим работы: <b id="settingsSummary">…</b></summary>
+        <div class="settings-grid">
+          <label>Чтение комплекта
+            <select id="optMode">
+              <option value="auto">auto — целиком, если помещается; иначе поиск</option>
+              <option value="full_context">full_context — весь комплект в одном запросе</option>
+              <option value="retrieval">retrieval — Qdrant: dense + BM25 + RRF</option>
+              <option value="exhaustive">exhaustive — все окна по очереди</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" id="optPassport" checked> применять паспорт закупки (подсказки фактов, поправки, конфликты)</label>
+          <label class="check"><input type="checkbox" id="optStrict" checked> строгий охват (ответ не завершает анализ — проверяются альтернативы и поправки)</label>
+          <p class="muted settings-note" id="settingsNote"></p>
+        </div>
+      </details>
+      <div class="recent" id="recent" hidden>
+        <span class="recent-title">Ранее загруженные:</span>
+        <div class="recent-list" id="recentList"></div>
+      </div>
+    </section>
+
+    <section class="ingest" id="ingest" hidden>
+      <div class="ingest-head">
+        <img class="ingest-cat" src="/assets/cat-bot.webp" alt="" width="72" height="72">
+        <div>
+          <h2 id="ingestTitle">Котик изучает документы…</h2>
+          <p class="muted" id="ingestSub">Читаем файлы, режем на блоки и окна, разбираем изменения, строим паспорт по всем окнам и индекс Qdrant</p>
+        </div>
+      </div>
+      <div class="progress"><div class="progress-bar" id="ingestBar"></div></div>
+      <ol class="stages" id="stages"></ol>
+      <div class="errors" id="ingestErrors"></div>
+      <div class="cta-row" id="resumeRow" hidden>
+        <button class="btn btn-primary" id="resumeIngest">Продолжить подготовку</button>
+        <span class="muted">Подготовка была прервана. Готовые окна паспорта повторно не читаются.</span>
+      </div>
+
+      <div id="ingestResult" hidden>
+        <h3 class="section-title">Закупки</h3>
+        <div class="pkg-grid" id="pkgGrid"></div>
+
+        <h3 class="section-title">Изменения извещения</h3>
+        <div id="amendments"></div>
+
+        <h3 class="section-title">Противоречия между документами <span class="hint">предварительно, по паспорту — каждый ответ перепроверяется по источникам</span></h3>
+        <div id="discrepancies"></div>
+
+        <div class="cta-row">
+          <button class="btn btn-primary btn-lg" id="goQuestions">Перейти к вопросам →</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================ Страница 2: вопросы ============================ -->
+  <main id="pageAsk" class="page" hidden>
+    <div class="tabs" role="tablist">
+      <button class="tab active" role="tab" aria-selected="true" data-tab="chat">Диалог</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="batch">Вопросы из CSV</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="eval" id="evalTab" disabled title="Доступна после завершённого прогона">Проверка</button>
+    </div>
+
+    <!-- ---- Диалог ---- -->
+    <section class="tab-panel" id="tabChat">
+      <div class="chat" id="chatList" aria-live="polite">
+        <div class="chat-empty" id="chatEmpty">
+          <img src="/assets/cat-bot.webp" alt="" width="96" height="96">
+          <p><b>Спросите котика!</b><br>Выберите закупку слева от поля и задайте вопрос.<br>
+            Каждый ответ — с дословной цитатой. Нажмите на ответ, чтобы увидеть обоснование.</p>
+          <div class="examples" id="examples"></div>
+        </div>
+      </div>
+      <form class="composer" id="composer" autocomplete="off">
+        <label class="sr-only" for="pkgSelect">Закупка</label>
+        <select id="pkgSelect" class="pkg-select" title="Закупка (папка)"></select>
+        <label class="sr-only" for="question">Вопрос</label>
+        <input id="question" class="question-input" placeholder="Введите Ваш вопрос..." enterkeyhint="send">
+        <button type="button" class="round-btn" id="micBtn" title="Голосовой ввод (GigaAM v3)" aria-label="Голосовой ввод">
+          <img src="/assets/icon-mic.png" alt="">
+          <span class="rec-timer" id="recTimer" hidden>0</span>
+        </button>
+        <button type="submit" class="round-btn" id="sendBtn" title="Отправить" aria-label="Отправить вопрос">
+          <img src="/assets/icon-send.png" alt="">
+        </button>
+      </form>
+    </section>
+
+    <!-- ---- Пакетный режим ---- -->
+    <section class="tab-panel" id="tabBatch" hidden>
+      <div class="batch-start" id="batchStart">
+        <img src="/assets/cat-user.webp" alt="" width="88" height="88" class="round-img">
+        <div class="batch-start-body">
+          <h2>Пакет вопросов</h2>
+          <p class="muted">CSV с колонками <code>id;package;question</code>. Котик ответит на все вопросы и соберёт <code>answers.csv</code> в формате кейса.</p>
+          <div class="batch-controls">
+            <label class="btn btn-secondary file-btn">
+              <input type="file" id="csvInput" accept=".csv,text/csv" hidden>Загрузить CSV с вопросами
+            </label>
+            <label class="check"><input type="checkbox" id="withBaseline" checked> сравнить с «было» (один запрос без проверок)</label>
+          </div>
+          <div id="csvInfo" class="csv-info"></div>
+          <button class="btn btn-primary btn-lg" id="startRun" hidden>Ответить на вопросы</button>
+          <div class="runs-list" id="runsList"></div>
+        </div>
+      </div>
+
+      <div id="batchRun" hidden>
+        <div class="run-head">
+          <div class="run-progress">
+            <div class="run-progress-text"><b id="runCount">0 / 0</b> <span class="muted" id="runState"></span></div>
+            <div class="progress"><div class="progress-bar" id="runBar"></div></div>
+          </div>
+          <div class="kpis" id="runKpis"></div>
+        </div>
+        <div class="table-wrap">
+          <table class="qtable" id="qtable">
+            <colgroup><col class="c-n"><col class="c-id"><col class="c-pkg"><col class="c-q"><col class="c-st"><col class="c-ans"></colgroup>
+            <thead><tr><th>№</th><th>id</th><th>Закупка</th><th>Вопрос</th><th>Тип ответа</th><th>Ответ</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="run-actions">
+          <!-- href появляется только после завершения прогона (app.js: setRunActions) -->
+          <a class="btn btn-secondary" id="dlAnswers" download disabled aria-disabled="true" tabindex="-1">Скачать answers.csv</a>
+          <a class="btn btn-ghost" id="dlBaseline" download hidden disabled aria-disabled="true" tabindex="-1">baseline.csv</a>
+          <a class="btn btn-ghost" id="dlTrace" download disabled aria-disabled="true" tabindex="-1">trace.json</a>
+          <label class="btn btn-primary file-btn" id="evalBtn" role="button" disabled aria-disabled="true" tabindex="-1">
+            <input type="file" id="goldInput" accept=".json,application/json" hidden disabled>Сделать проверку
+          </label>
+          <button class="btn btn-ghost" id="resumeRun" hidden>Продолжить прерванный прогон</button>
+          <button class="btn btn-ghost" id="newQuestions">Загрузить новые вопросы</button>
+        </div>
+        <details class="artifacts" id="artifacts" hidden>
+          <summary>Все артефакты прогона</summary>
+          <div id="artifactLinks"></div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ---- Проверка (третья вкладка) ---- -->
+    <section class="tab-panel" id="tabEval" hidden>
+      <div class="empty-note" id="evalEmpty"><img src="/assets/cat-bot.webp" alt="">Сначала завершите прогон на вкладке «Вопросы из CSV», затем нажмите «Сделать проверку» и выберите файл эталонных ответов (JSON).</div>
+      <section id="evaluation" hidden></section>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p><span class="footer-dot" aria-hidden="true"></span>Точные ответы · проверяемые источники · честное «не знаю»</p>
+  </footer>
+</div>
+
+<!-- Облачко с обоснованием -->
+<aside class="cloud" id="cloud" hidden aria-label="Обоснование ответа">
+  <button class="cloud-close" id="cloudClose" aria-label="Закрыть">×</button>
+  <div class="cloud-body" id="cloudBody"></div>
+</aside>
+
+<!-- Просмотр документа -->
+<div class="modal" id="docModal" hidden>
+  <div class="modal-card">
+    <div class="modal-head"><b id="docTitle"></b><button class="cloud-close" id="docClose" aria-label="Закрыть">×</button></div>
+    <div class="doc-view" id="docView"></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<script src="/app.js"></script>
+</body>
+</html>

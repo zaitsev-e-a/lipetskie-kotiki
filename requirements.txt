@@ -1,0 +1,12 @@
+# Липецкие котики — ИИ, который не обманывает. Python 3.12 (поддерживается 3.10–3.13).
+# Обязательные: граф вопроса работает на LangGraph (StateGraph). Qdrant — отдельный сервер (docker-compose.yml),
+# клиент — REST на стандартной библиотеке, пакет qdrant-client не нужен.
+langgraph==1.2.14
+
+# PDF с текстовым слоем
+pypdf==5.4.0
+# OCR сканов внутри PDF (необязательно; ещё нужна программа Tesseract с языком rus)
+pytesseract==0.3.13
+Pillow==11.2.1
+
+# Голосовой ввод GigaAM v3 e2e_rnnt — отдельный файл requirements-voice.txt (torch CPU + GigaAM с GitHub).

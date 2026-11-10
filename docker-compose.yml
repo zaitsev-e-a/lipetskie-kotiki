@@ -1,0 +1,16 @@
+# Qdrant для гибридного поиска: dense-векторы + BM25 (полнотекстовый индекс, русский стеммер) + RRF.
+# Запуск: docker compose up -d qdrant   ·   проверка: curl http://localhost:6333/
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.20.0
+    container_name: lipetskie-kotiki-qdrant
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6333:6333"   # REST — только localhost
+    volumes:
+      - qdrant_storage:/qdrant/storage   # индекс переживает перезапуск контейнера
+    environment:
+      QDRANT__TELEMETRY_DISABLED: "true"
+
+volumes:
+  qdrant_storage:

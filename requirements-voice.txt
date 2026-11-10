@@ -1,0 +1,14 @@
+# Голосовой ввод GigaAM v3 (локально, на CPU). Windows: дважды щёлкните install_voice.bat.
+# Вручную: python -m pip install --upgrade -r requirements-voice.txt   (нужен Python 3.10+ и ffmpeg в PATH)
+#
+# Источник зависимостей — pyproject.toml репозитория https://github.com/salute-developers/GigaAM
+# (gigaam 0.2.0, requires-python >=3.10; extra [torch]: torch>=2.6, torchaudio>=2.6;
+#  остальное пакет тянет сам: hydra-core, numpy 2, omegaconf, onnx, onnxruntime, soundfile, sentencepiece, tqdm).
+# Пакет gigaam с PyPI (0.1.0) содержит только v1/v2 — v3_e2e_rnnt там нет, поэтому ставим архив с GitHub (без git).
+
+# CPU-сборки torch: без CUDA, заметно меньше по размеру
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.6
+torchaudio>=2.6
+
+gigaam @ https://github.com/salute-developers/GigaAM/archive/refs/heads/main.zip
